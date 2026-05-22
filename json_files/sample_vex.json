@@ -1,0 +1,59 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-21T12:00:00Z",
+    "tools": [
+      {
+        "vendor": "ExampleCorp",
+        "name": "VEX Generator",
+        "version": "1.0"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "sample-web-app",
+      "version": "2.3.1",
+      "purl": "pkg:generic/sample-web-app@2.3.1"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "openssl-component",
+      "type": "library",
+      "name": "openssl",
+      "version": "3.0.2",
+      "purl": "pkg:generic/openssl@3.0.2"
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2023-12345",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-12345"
+      },
+      "ratings": [
+        {
+          "severity": "high",
+          "score": 8.1,
+          "method": "CVSSv3"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "openssl-component"
+        }
+      ],
+      "analysis": {
+        "state": "not_affected",
+        "justification": "vulnerable_code_not_in_execute_path",
+        "response": [
+          "will_not_fix"
+        ],
+        "detail": "The vulnerable OpenSSL functionality is present but never invoked by the application."
+      }
+    }
+  ]
+}
