@@ -5,31 +5,30 @@ use serde_json::Value;
 pub struct CdkVex(Value);
 
 impl CdkVex {
-    fn new(value: Value) -> Self {
-        CdkVex(value)
-    }
+    // fn new(value: Value) -> Self {
+    //     CdkVex(value)
+    // }
 
-    pub fn fromJsonFile(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_json_file(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let data_str = fs::read_to_string(file_path)?;
         let sample_data: Value = serde_json::from_str(&data_str)?;
         Ok(CdkVex(sample_data))
     }
 
-    pub fn writeJsonFile(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn write_json_file(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let to_write = serde_json::to_string_pretty(&self.0)?;
         let mut output_file = fs::File::create(file_path)?;
         output_file.write_all(to_write.as_bytes())?;
         Ok(())
     }
 
-    pub fn print_LastUpdateds(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn print_last_updateds(&self) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(vul) = self.0.get("vulnerabilities").and_then(|v| v.as_array()) {
             for v in vul.iter() {
-                if let Some(a) = v.get("analysis") {
-                    if let Some(u) = a.get("lastUpdated") {
+                if let Some(a) = v.get("analysis")
+                    && let Some(u) = a.get("lastUpdated") {
                         println!("\n\n LU IS: {:?}", u);
                     }
-                }
             }
         }
         Ok(())

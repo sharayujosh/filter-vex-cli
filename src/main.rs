@@ -31,10 +31,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
     // let tf = ExactTextFilter::new("foo");
     // println!("{}", tf.equals("bar"));
 
-    let obj: CdkVex = CdkVex::fromJsonFile("json_files/sample_vex.json")?;
-    obj.writeJsonFile("json_files/output2.json")?;
+    let obj: CdkVex = CdkVex::from_json_file("json_files/sample_vex.json")?;
+    obj.write_json_file("json_files/output2.json")?;
 
-    obj.print_LastUpdateds()?;
+    obj.print_last_updateds()?;
 
     Ok(())
     //let sample_data = serde_json::from_str(&(fs::read_to_string("sample_vex.json")?))?;
