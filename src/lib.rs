@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use std::fs;
 use std::io::Write;
 use serde_json::Value;
@@ -27,7 +28,14 @@ impl CdkVex {
             for v in vul.iter() {
                 if let Some(a) = v.get("analysis")
                     && let Some(u) = a.get("lastUpdated") {
-                        println!("\n\n LU IS: {:?}", u);
+                        if let Some(mut x) = u.as_str() {
+                            println!("\n\n LU IS: {:?}", x);
+                            let n = NaiveDate::parse_from_str(x.trim_end_matches('Z'), "%Y-%m-%dT%H:%M:%S")?;
+                            println!("\n\n LU IS: {:?}", n);
+                        }
+                        
+                        // let n = NaiveDate::parse_from_str(&u.to_string().trim_end_matches('Z'), "%Y-%m-%dT%H:%M:%S");
+                        // println!("\n\n LU IS: {:?}", n);
                     }
             }
         }
