@@ -21,4 +21,17 @@ impl CdkVex {
         output_file.write_all(to_write.as_bytes())?;
         Ok(())
     }
+
+    pub fn print_LastUpdateds(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(vul) = self.0.get("vulnerabilities").and_then(|v| v.as_array()) {
+            for v in vul.iter() {
+                if let Some(a) = v.get("analysis") {
+                    if let Some(u) = a.get("lastUpdated") {
+                        println!("\n\n LU IS: {:?}", u);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
 }

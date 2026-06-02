@@ -34,6 +34,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
     let obj: CdkVex = CdkVex::fromJsonFile("json_files/sample_vex.json")?;
     obj.writeJsonFile("json_files/output2.json")?;
 
+    obj.print_LastUpdateds()?;
+
     Ok(())
     //let sample_data = serde_json::from_str(&(fs::read_to_string("sample_vex.json")?))?;
 }
