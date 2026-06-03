@@ -64,6 +64,54 @@
         "name": "National Vulnerability Database",
         "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"
       }
+    },
+    {
+      "affects": [
+        {
+          "ref": "billing-app",
+          "versions": [
+            {
+              "range": "vers:semver/1.2.3|>=2.0.0|<5.0.0",
+              "status": "unaffected"
+            }
+          ]
+        }
+      ],
+      "analysis": {
+        "detail": "Extensive input validation is performed on the endpoint that would otherwise have been vulnerable. This provides a mitigating control against this attack. Customers are encouraged to upgrade to the latest version of the Acme App which bundles a newer version of log4j.",
+        "firstIssued": "2021-12-11T19:00:00Z",
+        "justification": "protected_by_mitigating_control",
+        "lastUpdated": "2024-01-07T19:00:00Z",
+        "response": [
+          "will_not_fix",
+          "update"
+        ],
+        "state": "not_affected"
+      },
+      "id": "CVE-2020-44228",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "score": 10.0,
+          "severity": "critical",
+          "source": {
+            "name": "National Vulnerability Database"
+          },
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"
+        },
+        {
+          "method": "OWASP",
+          "severity": "low",
+          "source": {
+            "name": "Acme PSIRT"
+          },
+          "vector": "(SL:0/M:0/O:0/S:0/ED:0/EE:0/A:0/ID:3/LC:9/LI:9/LAV:1/LAC:1/FD:0/RD:0/NC:0/PV:0)"
+        }
+      ],
+      "source": {
+        "name": "National Vulnerability Database",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"
+      }
     }
   ]
 }

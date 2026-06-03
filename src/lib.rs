@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{Utc, NaiveDate};
 use std::fs;
 use std::io::Write;
 use serde_json::Value;
@@ -18,27 +18,51 @@ impl CdkVex {
 
     pub fn write_json_file(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let to_write = serde_json::to_string_pretty(&self.0)?;
+        // let mut file = OpenOptions::new()
+        // .create(true) // Create the file if it doesn't exist.
+        // .append(true) // Seek to end before every write.
+        // .open(file_path)?;
         let mut output_file = fs::File::create(file_path)?;
         output_file.write_all(to_write.as_bytes())?;
         Ok(())
     }
 
-    pub fn print_last_updateds(&self) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(vul) = self.0.get("vulnerabilities").and_then(|v| v.as_array()) {
-            for v in vul.iter() {
-                if let Some(a) = v.get("analysis")
+    pub fn print_last_updateds(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut to_delete:Vec<usize> = Vec::new();
+        let days = 1000;
+        if let Some(vul) = self.0.get_mut("vulnerabilities").and_then(|v| v.as_array_mut()) {
+            for (id, i) in vul.iter().enumerate() {
+                if let Some(a) = i.get("analysis")
                     && let Some(u) = a.get("lastUpdated") {
-                        if let Some(mut x) = u.as_str() {
-                            println!("\n\n LU IS: {:?}", x);
+                        if let Some(x) = u.as_str() {
+                            // println!("\n\n LU IS: {:?}", x);
                             let n = NaiveDate::parse_from_str(x.trim_end_matches('Z'), "%Y-%m-%dT%H:%M:%S")?;
-                            println!("\n\n LU IS: {:?}", n);
+                            let today = Utc::now().date_naive();
+
+                            // println!("{}",(today - n).num_days());
+                            if (today - n).num_days() > days {
+                                to_delete.push(id);
+                                println!("{:?}", to_delete);
+                            }
                         }
-                        
-                        // let n = NaiveDate::parse_from_str(&u.to_string().trim_end_matches('Z'), "%Y-%m-%dT%H:%M:%S");
-                        // println!("\n\n LU IS: {:?}", n);
                     }
             }
+
+            for i in to_delete.iter().rev(){
+                vul.remove(*i);
+            }
+            println!("{:?}", vul);
+
         }
         Ok(())
     }
+
+    // pub fn is_within_bound(lastUpdated:NaiveDate, days:i32) -> bool {
+    //     let today = Utc::now().date_naive();
+    //     if (today - lastUpdated).num_days() > days {
+    //         // println!("{}", (today - lastUpdated).num_days());
+    //         false
+    //     }
+    //     true
+    // }
 }
