@@ -32,20 +32,16 @@ impl CdkVex {
         let days = 1000;
         if let Some(vul) = self.0.get_mut("vulnerabilities").and_then(|v| v.as_array_mut()) {
             for (id, i) in vul.iter().enumerate() {
-                if let Some(a) = i.get("analysis")
-                    && let Some(u) = a.get("lastUpdated") {
-                        if let Some(x) = u.as_str() {
-                            // println!("\n\n LU IS: {:?}", x);
-                            let n = NaiveDate::parse_from_str(x.trim_end_matches('Z'), "%Y-%m-%dT%H:%M:%S")?;
-                            let today = Utc::now().date_naive();
+                let vv = CdxVulnerability::new(i)?;
+                if let Some(n) = vv.get_last_updated() {
+                    let today = Utc::now().date_naive();
 
-                            // println!("{}",(today - n).num_days());
-                            if (today - n).num_days() > days {
-                                to_delete.push(id);
-                                println!("{:?}", to_delete);
-                            }
-                        }
+                    if (today - n).num_days() > days {
+                        to_delete.push(id);
+                        println!("{:?}", to_delete);
                     }
+                }
+                    
             }
 
             for i in to_delete.iter().rev(){
@@ -65,4 +61,30 @@ impl CdkVex {
     //     }
     //     true
     // }
+}
+
+struct CdxVulnerability {
+    last_updated:Option<NaiveDate>,
+}
+
+impl CdxVulnerability {
+    fn new(var:&serde_json::Value) -> Result<Self, Box<dyn std::error::Error>>  {
+        let mut last_updated:Option<NaiveDate> = None;
+        if let Some(a) = var.get("analysis")
+            && let Some(u) = a.get("lastUpdated") 
+                && let Some(x) = u.as_str() {
+                    // println!("\n\n LU IS: {:?}", x);
+                    last_updated = Some(NaiveDate::parse_from_str(x.trim_end_matches('Z'), "%Y-%m-%dT%H:%M:%S")?);
+        }
+        
+        Ok(
+            Self {
+                last_updated,
+            }
+        )
+    }
+
+    fn get_last_updated(&self) -> Option<NaiveDate> {
+        self.last_updated
+    }
 }
