@@ -1,6 +1,7 @@
 use chrono::{Utc, NaiveDate};
 use std::fs;
 use std::io::Write;
+ use std::str::FromStr;
 use serde_json::Value;
 
 pub struct CdkVex(Value);
@@ -53,14 +54,26 @@ impl CdkVex {
         Ok(())
     }
 
-    // pub fn is_within_bound(lastUpdated:NaiveDate, days:i32) -> bool {
-    //     let today = Utc::now().date_naive();
-    //     if (today - lastUpdated).num_days() > days {
-    //         // println!("{}", (today - lastUpdated).num_days());
-    //         false
-    //     }
-    //     true
-    // }
+    pub fn apply_filter(&mut self, filter: &CdxFilter) -> Result<(), Box<dyn std::error::Error>> {
+        let mut to_delete:Vec<usize> = Vec::new();
+        if let Some(vul) = self.0.get_mut("vulnerabilities").and_then(|v| v.as_array_mut()) {
+            for (id, i) in vul.iter().enumerate() {
+                let vv = CdxVulnerability::new(i)?;
+                if let Some(n) = vv.get_last_updated() {
+                    if !vv.match_filter(filter) {
+                        to_delete.push(id);
+                    }
+                }
+            }
+
+            for i in to_delete.iter().rev(){
+                vul.remove(*i);
+            }
+            println!("{:?}", vul);
+        }
+        Ok(())
+    }
+    
 }
 
 struct CdxVulnerability {
@@ -86,5 +99,43 @@ impl CdxVulnerability {
 
     fn get_last_updated(&self) -> Option<NaiveDate> {
         self.last_updated
+    }
+
+    fn match_filter(&self, filter: &CdxFilter) -> bool {
+        for f in &filter.last_updated{
+            let trimmed = f.trim();
+            if trimmed.len() != 11 {
+                if trimmed.is_empty() {
+                    return true;
+                }
+                return false;
+            }
+            let (compatator, date_str) = trimmed.split_at(1);
+            //let split_date:Vec<&str> = date_str.split('-').collect();
+            if let Ok(date_naive) = NaiveDate::from_str(date_str) 
+                && let Some(update_date) = self.last_updated {
+                return match compatator {
+                    "<" => (update_date - date_naive).num_days() < 0,
+                    ">" => (update_date - date_naive).num_days() > 0,
+                    "=" => update_date == date_naive,
+                    _ => false,
+                };
+            }
+        }
+        true
+    }
+}
+
+pub struct CdxFilter {
+    pub last_updated:Vec<String>,
+}
+
+impl CdxFilter {
+    pub fn new() -> Result<Self, Box<dyn std::error::Error>>  {
+        Ok (
+            Self {
+                last_updated: Vec::new(),
+            }
+        )
     }
 }

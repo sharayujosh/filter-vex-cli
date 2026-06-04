@@ -1,6 +1,6 @@
 // use clap::Parser;
 // use std::fs::File;
-use filter_vex_cli::CdkVex;
+use filter_vex_cli::{CdkVex, CdxFilter};
 
 // struct ExactTextFilter {
 //     pattern: String,
@@ -32,10 +32,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
     // println!("{}", tf.equals("bar"));
 
     let mut obj: CdkVex = CdkVex::from_json_file("json_files/sample_vex.json")?;
+
+    //obj.print_last_updateds()?;
+    let mut filter:CdxFilter = CdxFilter::new()?;
+    filter.last_updated.push("=2022-01-07".to_string());
+    obj.apply_filter(&filter)?;
+
     obj.write_json_file("json_files/output2.json")?;
-
-    obj.print_last_updateds()?;
-
 
     Ok(())
     //let sample_data = serde_json::from_str(&(fs::read_to_string("sample_vex.json")?))?;
