@@ -31,3 +31,11 @@ Define struct CdxVulnerability built w/ lastUpdated as NaiveDate. Need from meth
 - For your CdxVulnerability class, create a function "match_filter(filter: &CdxFilter) -> bool". This borrows the filter and does not own it.
 - The match_filter function should do the following for each entry of the filter vector: Trim the string. Support the following formats: "<2025-12-31", ">2025-12-31", "=2026-12-31". The meaning should be obvious. If a filter does not match, return false immediately. If all match, at the end return true. If vector is empty, return true.
 - Add new method apply_filter(filter: &CdxFilter) to your main CdxVex struct. It should iterate through each vulnerability, make a new CdxVulnerability struct and call match_filter on it. If result is false, mark that entry for deletion and then delete it.
+
+## P 7
+
+Cli, req in/out file -i-o else die. no filter, lastupdate (takes string of filter bounds). Use clap & miette
+
+## P 8
+
+mult filters (LUGre, LULess)
