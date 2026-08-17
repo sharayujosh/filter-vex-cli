@@ -1,6 +1,6 @@
 // use clap::Parser;
 // use std::fs::File;
-use filter_vex_cli::{CdkVex, CdxFilter};
+use filter_vex_cli::{CdxVex, CdxVexFilter};
 
 // struct ExactTextFilter {
 //     pattern: String,
@@ -25,20 +25,41 @@ use filter_vex_cli::{CdkVex, CdxFilter};
 // }
 
 // unit test of 'severity' function for VEX files
-// fn 
+// fn
 
-fn main() -> Result<(), Box<dyn std::error::Error>>{
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+struct Args {
+    // Input file address
+    #[arg(short, long)]
+    input_file: String,
+
+    // Output file address
+    #[arg(short, long)]
+    output_file: String,
+
+    // date filter
+    #[arg(short, long)]
+    last_updated_filter: Option<String>,
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let tf = ExactTextFilter::new("foo");
     // println!("{}", tf.equals("bar"));
 
-    let mut obj: CdkVex = CdkVex::from_json_file("json_files/sample_vex.json")?;
+    let args = Args::parse();
+
+    let mut obj: CdxVex = CdxVex::from_json_file(&args.input_file)?;
 
     //obj.print_last_updateds()?;
-    let mut filter:CdxFilter = CdxFilter::new()?;
-    filter.last_updated.push("=2022-01-07".to_string());
+    let mut filter: CdxVexFilter = CdxVexFilter::new()?;
+    if let Some(date_filter) = args.last_updated_filter {
+        filter.last_updated.push(date_filter);
+    }
     obj.apply_filter(&filter)?;
 
-    obj.write_json_file("json_files/output2.json")?;
+    obj.write_json_file(&args.output_file)?;
 
     Ok(())
     //let sample_data = serde_json::from_str(&(fs::read_to_string("sample_vex.json")?))?;
