@@ -71,10 +71,7 @@ impl CdxVex {
         Ok(())
     }
 
-    pub fn apply_filter(
-        &mut self,
-        filter: &CdxVexFilter,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn apply_filter(&mut self, filter: &CdxVexFilter) -> Result<(), CdxVexError> {
         let mut to_delete: Vec<usize> = Vec::new();
         if let Some(vul) = self
             .0
@@ -172,7 +169,7 @@ pub struct CdxVexFilter {
 }
 
 impl CdxVexFilter {
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new() -> Result<Self, CdxVexError> {
         Ok(Self {
             last_updated: Vec::new(),
         })
