@@ -1,3 +1,13 @@
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::assertions_on_result_states
+    )
+)]
+
 use chrono::{NaiveDate, Utc};
 use serde_json::Value;
 use std::fs;
