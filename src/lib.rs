@@ -32,7 +32,7 @@ impl CdxVex {
         Ok(CdxVex(sample_data))
     }
 
-    pub fn write_json_file(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn write_json_file(&self, file_path: &str) -> Result<(), CdxVexError> {
         let to_write = serde_json::to_string_pretty(&self.0)?;
         // let mut file = OpenOptions::new()
         // .create(true) // Create the file if it doesn't exist.
@@ -43,7 +43,7 @@ impl CdxVex {
         Ok(())
     }
 
-    pub fn print_last_updateds(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn print_last_updateds(&mut self) -> Result<(), CdxVexError> {
         let mut to_delete: Vec<usize> = Vec::new();
         let days = 1000;
         if let Some(vul) = self
@@ -102,7 +102,7 @@ struct CdxVulnerability {
 }
 
 impl CdxVulnerability {
-    fn new(var: &serde_json::Value) -> Result<Self, Box<dyn std::error::Error>> {
+    fn new(var: &serde_json::Value) -> Result<Self, CdxVexError> {
         let mut last_updated: Option<NaiveDate> = None;
         if let Some(a) = var.get("analysis")
             && let Some(u) = a.get("lastUpdated")
