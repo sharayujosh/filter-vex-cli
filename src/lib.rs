@@ -14,6 +14,10 @@ use std::fs;
 use std::io::Write;
 use std::str::FromStr;
 
+mod error;
+
+pub use error::CdxVexError;
+
 pub struct CdxVex(Value);
 
 impl CdxVex {
@@ -22,7 +26,7 @@ impl CdxVex {
     //Vex(value)
     // }
 
-    pub fn from_json_file(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_json_file(file_path: &str) -> Result<Self, CdxVexError> {
         let data_str = fs::read_to_string(file_path)?;
         let sample_data: Value = serde_json::from_str(&data_str)?;
         Ok(CdxVex(sample_data))
