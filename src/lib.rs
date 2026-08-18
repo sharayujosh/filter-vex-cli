@@ -18,6 +18,8 @@ mod error;
 
 pub use error::CdxVexError;
 
+pub type Result<T> = std::result::Result<T, CdxVexError>;
+
 pub struct CdxVex(Value);
 
 impl CdxVex {
@@ -26,13 +28,13 @@ impl CdxVex {
     //Vex(value)
     // }
 
-    pub fn from_json_file(file_path: &str) -> Result<Self, CdxVexError> {
+    pub fn from_json_file(file_path: &str) -> Result<Self> {
         let data_str = fs::read_to_string(file_path)?;
         let sample_data: Value = serde_json::from_str(&data_str)?;
         Ok(CdxVex(sample_data))
     }
 
-    pub fn write_json_file(&self, file_path: &str) -> Result<(), CdxVexError> {
+    pub fn write_json_file(&self, file_path: &str) -> Result<()> {
         let to_write = serde_json::to_string_pretty(&self.0)?;
         // let mut file = OpenOptions::new()
         // .create(true) // Create the file if it doesn't exist.
@@ -43,7 +45,7 @@ impl CdxVex {
         Ok(())
     }
 
-    pub fn print_last_updateds(&mut self) -> Result<(), CdxVexError> {
+    pub fn print_last_updateds(&mut self) -> Result<()> {
         let mut to_delete: Vec<usize> = Vec::new();
         let days = 1000;
         if let Some(vul) = self
@@ -71,7 +73,7 @@ impl CdxVex {
         Ok(())
     }
 
-    pub fn apply_filter(&mut self, filter: &CdxVexFilter) -> Result<(), CdxVexError> {
+    pub fn apply_filter(&mut self, filter: &CdxVexFilter) -> Result<()> {
         let mut to_delete: Vec<usize> = Vec::new();
         if let Some(vul) = self
             .0
@@ -99,7 +101,7 @@ struct CdxVulnerability {
 }
 
 impl CdxVulnerability {
-    fn new(var: &serde_json::Value) -> Result<Self, CdxVexError> {
+    fn new(var: &serde_json::Value) -> Result<Self> {
         let mut last_updated: Option<NaiveDate> = None;
         if let Some(a) = var.get("analysis")
             && let Some(u) = a.get("lastUpdated")
@@ -169,7 +171,7 @@ pub struct CdxVexFilter {
 }
 
 impl CdxVexFilter {
-    pub fn new() -> Result<Self, CdxVexError> {
+    pub fn new() -> Result<Self> {
         Ok(Self {
             last_updated: Vec::new(),
         })
