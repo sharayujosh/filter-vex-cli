@@ -2,6 +2,9 @@
 name = "filter_vex_cli"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "CycloneDx VEX filter"
+author = "Sharayu Josh"
 
 [features]
 cli = ["dep:clap", "dep:miette"]
