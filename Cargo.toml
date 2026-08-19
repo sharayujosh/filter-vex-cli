@@ -3,9 +3,22 @@ name = "filter_vex_cli"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+cli = ["dep:clap", "dep:miette"]
+default = ["cli"]
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "cdxvex_cli"
+path = "src/bin/cdxvex_cli/main.rs"
+
 [dependencies]
 chrono = "0.4.44"
-clap = { version = "4.6.1", features = ["derive"] }
-miette = { version = "7.6.0", features = ["fancy"] }
 serde_json = "1.0.150"
 thiserror = "2.0.20"
+
+# CLI specific dependencies
+clap = { version = "4", features = ["derive"], optional = true}
+miette = { version = "7", features = ["fancy"], optional = true}
