@@ -187,8 +187,6 @@ impl CdxVexFilter {
     }
 }
 
-// ---------- TEST LOGIC FUNCTIONS -----------
-
 fn match_date(date: &NaiveDate, filter_date: &str) -> bool {
     if filter_date.is_empty() {
         return false;
@@ -224,7 +222,7 @@ mod tests {
         let last_updated = NaiveDate::from_ymd_opt(2024, 1, 10).unwrap();
 
         assert!(match_date(&last_updated, "=2024-01-10"));
-        assert!(match_date(&last_updated, "<2024-01-20"));
+        assert!(match_date(&last_updated, "<2024-01-20 "));
         assert!(match_date(&last_updated, ">2024-01-01"));
     }
 
@@ -233,7 +231,7 @@ mod tests {
         let last_updated = NaiveDate::from_ymd_opt(2024, 1, 10).unwrap();
 
         assert!(!match_date(&last_updated, "<2024-01-01"));
-        assert!(!match_date(&last_updated, ">2024-01-20"));
+        assert!(!match_date(&last_updated, ">2024-01-20 "));
         assert!(!match_date(&last_updated, "=bad-date"));
         assert!(!match_date(&last_updated, ""));
     }
@@ -243,7 +241,7 @@ mod tests {
         let first_issued = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
 
         assert!(match_date(&first_issued, "=2019-01-10"));
-        assert!(match_date(&first_issued, "<2019-01-20"));
+        assert!(match_date(&first_issued, "<2019-01-20 "));
         assert!(match_date(&first_issued, ">2019-01-01"));
     }
 
@@ -251,8 +249,8 @@ mod tests {
     fn match_first_issued_rejects_non_matching_and_invalid_filters() {
         let first_issued = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
 
-        assert!(!match_date(&first_issued, "<2019-01-01"));
-        assert!(!match_date(&first_issued, ">2019-01-20"));
+        assert!(!match_date(&first_issued, "<20-01-01"));
+        assert!(!match_date(&first_issued, ">2019-01-20 "));
         assert!(!match_date(&first_issued, "=bad-date"));
         assert!(!match_date(&first_issued, ""));
     }

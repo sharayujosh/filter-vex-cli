@@ -50,12 +50,12 @@ struct Args {
     output_file: String,
 
     // date filter
-    #[arg(short, long)]
-    last_updated_filter: Option<String>,
+    #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
+    last_updated_filter: Option<Vec<String>>,
 
     // date filter
-    #[arg(short, long)]
-    first_issued_filter: Option<String>,
+    #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
+    first_issued_filter: Option<Vec<String>>,
 }
 
 fn main() -> Result<()> {
@@ -69,13 +69,16 @@ fn main() -> Result<()> {
     //obj.print_last_updateds()?;
     let mut filter: CdxVexFilter = CdxVexFilter::new().into_diagnostic()?;
     if let Some(date_filter) = args.last_updated_filter {
-        filter.last_updated.push(date_filter);
+        for f in date_filter {
+            filter.last_updated.push(f);
+        }
     }
     if let Some(date_filter) = args.first_issued_filter {
-        filter.first_issued.push(date_filter);
+        for f in date_filter {
+            filter.first_issued.push(f);
+        }
     }
     obj.apply_filter(&filter).into_diagnostic()?;
-
     obj.write_json_file(&args.output_file).into_diagnostic()?;
 
     Ok(())
