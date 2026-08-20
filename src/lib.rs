@@ -145,55 +145,31 @@ impl CdxVulnerability {
     }
 
     fn match_last_updated(&self, filter: &CdxVexFilter) -> bool {
+        let mut to_return = true;
         for f in &filter.last_updated {
-            let trimmed = f.trim();
-            if trimmed.len() != 11 {
-                if trimmed.is_empty() {
-                    return true;
+            if to_return {
+                if let Some(last_updated) = self.last_updated {
+                    to_return = to_return && match_date(&last_updated, f);
                 }
+            } else {
                 return false;
             }
-            let (compatator, date_str) = trimmed.split_at(1); // use split_at_checked & handle 'None' case
-            //let split_date:Vec<&str> = date_str.split('-').collect();
-            if let Ok(date_naive) = NaiveDate::from_str(date_str) // handle error
-                    && let Some(last_updated) = self.last_updated
-            {
-                // check before loop, return false if not
-                return match compatator {
-                    "<" => (last_updated - date_naive).num_days() < 0,
-                    ">" => (last_updated - date_naive).num_days() > 0,
-                    "=" => last_updated == date_naive,
-                    _ => false,
-                };
-            }
         }
-        true
+        to_return
     }
 
     fn match_first_issued(&self, filter: &CdxVexFilter) -> bool {
+        let mut to_return = true;
         for f in &filter.first_issued {
-            let trimmed = f.trim();
-            if trimmed.len() != 11 {
-                if trimmed.is_empty() {
-                    return true;
+            if to_return {
+                if let Some(first_issued) = self.first_issued {
+                    to_return = to_return && match_date(&first_issued, f);
                 }
+            } else {
                 return false;
             }
-            let (compatator, date_str) = trimmed.split_at(1); // use split_at_checked & handle 'None' case
-            //let split_date:Vec<&str> = date_str.split('-').collect();
-            if let Ok(date_naive) = NaiveDate::from_str(date_str) // handle error
-                    && let Some(first_issued) = self.first_issued
-            {
-                // check before loop, return false if not
-                return match compatator {
-                    "<" => (first_issued - date_naive).num_days() < 0,
-                    ">" => (first_issued - date_naive).num_days() > 0,
-                    "=" => first_issued == date_naive,
-                    _ => false,
-                };
-            }
         }
-        true
+        to_return
     }
 }
 
@@ -213,17 +189,24 @@ impl CdxVexFilter {
 
 // ---------- TEST LOGIC FUNCTIONS -----------
 
-fn match_last_updated(last_updated: &NaiveDate, filter: &str) -> bool {
-    if filter.is_empty() {
+fn match_date(date: &NaiveDate, filter_date: &str) -> bool {
+    if filter_date.is_empty() {
         return false;
     }
-    let trimmed = filter.trim();
+    let trimmed = filter_date.trim();
+    if trimmed.len() != 11 {
+        // check that the date is appropriate num of chars
+        if trimmed.is_empty() {
+            return true;
+        }
+        return false;
+    }
     let (compatator, date_str) = trimmed.split_at(1);
     if let Ok(date_naive) = date_str.parse::<NaiveDate>() {
         match compatator {
-            "<" => (*last_updated - date_naive).num_days() < 0,
-            ">" => (*last_updated - date_naive).num_days() > 0,
-            "=" => *last_updated == date_naive,
+            "<" => (*date - date_naive).num_days() < 0,
+            ">" => (*date - date_naive).num_days() > 0,
+            "=" => *date == date_naive,
             _ => false,
         }
     } else {
@@ -240,18 +223,18 @@ mod tests {
     fn match_last_updated_matches_expected_comparisons() {
         let last_updated = NaiveDate::from_ymd_opt(2024, 1, 10).unwrap();
 
-        assert!(match_last_updated(&last_updated, "=2024-01-10"));
-        assert!(match_last_updated(&last_updated, "<2024-01-20"));
-        assert!(match_last_updated(&last_updated, ">2024-01-01"));
+        assert!(match_date(&last_updated, "=2024-01-10"));
+        assert!(match_date(&last_updated, "<2024-01-20"));
+        assert!(match_date(&last_updated, ">2024-01-01"));
     }
 
     #[test]
     fn match_last_updated_rejects_non_matching_and_invalid_filters() {
         let last_updated = NaiveDate::from_ymd_opt(2024, 1, 10).unwrap();
 
-        assert!(!match_last_updated(&last_updated, "<2024-01-01"));
-        assert!(!match_last_updated(&last_updated, ">2024-01-20"));
-        assert!(!match_last_updated(&last_updated, "=bad-date"));
-        assert!(!match_last_updated(&last_updated, ""));
+        assert!(!match_date(&last_updated, "<2024-01-01"));
+        assert!(!match_date(&last_updated, ">2024-01-20"));
+        assert!(!match_date(&last_updated, "=bad-date"));
+        assert!(!match_date(&last_updated, ""));
     }
 }
