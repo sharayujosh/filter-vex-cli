@@ -98,6 +98,7 @@ impl CdxVex {
 
 struct CdxVulnerability {
     last_updated: Option<NaiveDate>,
+    first_issued: Option<NaiveDate>,
 }
 
 impl CdxVulnerability {
@@ -113,15 +114,37 @@ impl CdxVulnerability {
                 "%Y-%m-%dT%H:%M:%S",
             )?);
         }
+        let mut first_issued: Option<NaiveDate> = None;
+        if let Some(a) = var.get("analysis")
+            && let Some(u) = a.get("firstIssued")
+            && let Some(x) = u.as_str()
+        {
+            // println!("\n\n LU IS: {:?}", x);
+            first_issued = Some(NaiveDate::parse_from_str(
+                x.trim_end_matches('Z'),
+                "%Y-%m-%dT%H:%M:%S",
+            )?);
+        }
 
-        Ok(Self { last_updated })
+        Ok(Self {
+            last_updated,
+            first_issued,
+        })
     }
 
     fn get_last_updated(&self) -> Option<NaiveDate> {
         self.last_updated
     }
 
+    fn get_first_issued(&self) -> Option<NaiveDate> {
+        self.first_issued
+    }
+
     fn match_filter(&self, filter: &CdxVexFilter) -> bool {
+        return self.match_last_updated(filter) && self.match_first_issued(filter);
+    }
+
+    fn match_last_updated(&self, filter: &CdxVexFilter) -> bool {
         for f in &filter.last_updated {
             let trimmed = f.trim();
             if trimmed.len() != 11 {
@@ -133,7 +156,7 @@ impl CdxVulnerability {
             let (compatator, date_str) = trimmed.split_at(1); // use split_at_checked & handle 'None' case
             //let split_date:Vec<&str> = date_str.split('-').collect();
             if let Ok(date_naive) = NaiveDate::from_str(date_str) // handle error
-                && let Some(last_updated) = self.last_updated
+                    && let Some(last_updated) = self.last_updated
             {
                 // check before loop, return false if not
                 return match compatator {
@@ -146,7 +169,49 @@ impl CdxVulnerability {
         }
         true
     }
+
+    fn match_first_issued(&self, filter: &CdxVexFilter) -> bool {
+        for f in &filter.first_issued {
+            let trimmed = f.trim();
+            if trimmed.len() != 11 {
+                if trimmed.is_empty() {
+                    return true;
+                }
+                return false;
+            }
+            let (compatator, date_str) = trimmed.split_at(1); // use split_at_checked & handle 'None' case
+            //let split_date:Vec<&str> = date_str.split('-').collect();
+            if let Ok(date_naive) = NaiveDate::from_str(date_str) // handle error
+                    && let Some(first_issued) = self.first_issued
+            {
+                // check before loop, return false if not
+                return match compatator {
+                    "<" => (first_issued - date_naive).num_days() < 0,
+                    ">" => (first_issued - date_naive).num_days() > 0,
+                    "=" => first_issued == date_naive,
+                    _ => false,
+                };
+            }
+        }
+        true
+    }
 }
+
+pub struct CdxVexFilter {
+    pub last_updated: Vec<String>,
+    pub first_issued: Vec<String>,
+}
+
+impl CdxVexFilter {
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            last_updated: Vec::new(),
+            first_issued: Vec::new(),
+        })
+    }
+}
+
+// ---------- TEST LOGIC FUNCTIONS -----------
 
 fn match_last_updated(last_updated: &NaiveDate, filter: &str) -> bool {
     if filter.is_empty() {
@@ -163,18 +228,6 @@ fn match_last_updated(last_updated: &NaiveDate, filter: &str) -> bool {
         }
     } else {
         false
-    }
-}
-
-pub struct CdxVexFilter {
-    pub last_updated: Vec<String>,
-}
-
-impl CdxVexFilter {
-    pub fn new() -> Result<Self> {
-        Ok(Self {
-            last_updated: Vec::new(),
-        })
     }
 }
 

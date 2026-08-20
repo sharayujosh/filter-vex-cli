@@ -1,5 +1,13 @@
-// use clap::Parser;
-// use std::fs::File;
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::assertions_on_result_states
+    )
+)]
+
 use filter_vex_cli::{CdxVex, CdxVexFilter};
 
 // struct ExactTextFilter {
@@ -28,8 +36,10 @@ use filter_vex_cli::{CdxVex, CdxVexFilter};
 // fn
 
 use clap::Parser;
+use miette::{IntoDiagnostic, Result};
 
 #[derive(Parser, Debug)]
+#[command(name = "cdxvex_cli", version, about = "CycloneDx VEX filter")]
 struct Args {
     // Input file address
     #[arg(short, long)]
@@ -42,24 +52,31 @@ struct Args {
     // date filter
     #[arg(short, long)]
     last_updated_filter: Option<String>,
+
+    // date filter
+    #[arg(short, long)]
+    first_issued_filter: Option<String>,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<()> {
     // let tf = ExactTextFilter::new("foo");
     // println!("{}", tf.equals("bar"));
 
     let args = Args::parse();
 
-    let mut obj: CdxVex = CdxVex::from_json_file(&args.input_file)?;
+    let mut obj: CdxVex = CdxVex::from_json_file(&args.input_file).into_diagnostic()?;
 
     //obj.print_last_updateds()?;
-    let mut filter: CdxVexFilter = CdxVexFilter::new()?;
+    let mut filter: CdxVexFilter = CdxVexFilter::new().into_diagnostic()?;
     if let Some(date_filter) = args.last_updated_filter {
         filter.last_updated.push(date_filter);
     }
-    obj.apply_filter(&filter)?;
+    if let Some(date_filter) = args.first_issued_filter {
+        filter.first_issued.push(date_filter);
+    }
+    obj.apply_filter(&filter).into_diagnostic()?;
 
-    obj.write_json_file(&args.output_file)?;
+    obj.write_json_file(&args.output_file).into_diagnostic()?;
 
     Ok(())
     //let sample_data = serde_json::from_str(&(fs::read_to_string("sample_vex.json")?))?;

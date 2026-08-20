@@ -1,12 +1,18 @@
 use chrono::ParseError;
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 
 pub enum CdxVexError {
-    #[error("IO error: {0}")]
+    #[error("Fail to read file")]
     IoError(#[from] std::io::Error),
-
+    // #[error("failed to read {path}")]
+    // ReadFile {
+    //     path: PathBuf,
+    //     #[source]
+    //     source: std::io::Error,
+    // },
     #[error("json error: {0}")]
     JsonError(#[from] serde_json::Error),
 
