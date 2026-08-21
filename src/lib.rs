@@ -12,7 +12,6 @@ use chrono::{NaiveDate, Utc};
 use serde_json::Value;
 use std::fs;
 use std::io::Write;
-use std::str::FromStr;
 
 mod error;
 
@@ -23,11 +22,6 @@ pub type Result<T> = std::result::Result<T, CdxVexError>;
 pub struct CdxVex(Value);
 
 impl CdxVex {
-    // fn new(value: Value) -> Self {
-    //     Cdx
-    //Vex(value)
-    // }
-
     pub fn from_json_file(file_path: &str) -> Result<Self> {
         let data_str = fs::read_to_string(file_path)?;
         let sample_data: Value = serde_json::from_str(&data_str)?;
@@ -136,10 +130,6 @@ impl CdxVulnerability {
         self.last_updated
     }
 
-    fn get_first_issued(&self) -> Option<NaiveDate> {
-        self.first_issued
-    }
-
     fn match_filter(&self, filter: &CdxVexFilter) -> bool {
         match_to_dates(self.last_updated, &filter.last_updated)
             && match_to_dates(self.first_issued, &filter.first_issued)
@@ -147,8 +137,8 @@ impl CdxVulnerability {
 }
 
 pub struct CdxVexFilter {
-    pub last_updated: Vec<String>,
-    pub first_issued: Vec<String>,
+    pub last_updated: Vec<Box<dyn DateComparator>>,
+    pub first_issued: Vec<Box<dyn DateComparator>>,
 }
 
 impl CdxVexFilter {
@@ -160,7 +150,10 @@ impl CdxVexFilter {
     }
 }
 
-fn match_to_dates(vul_date: Option<NaiveDate>, date_filters: &Vec<String>) -> bool {
+fn match_to_dates(
+    vul_date: Option<NaiveDate>,
+    date_filters: &Vec<Box<dyn DateComparator>>,
+) -> bool {
     let mut to_return = true;
     let v_date = match vul_date {
         Some(v) => v,
@@ -168,7 +161,7 @@ fn match_to_dates(vul_date: Option<NaiveDate>, date_filters: &Vec<String>) -> bo
     };
     for f in date_filters {
         if to_return {
-            to_return = to_return && compare_date(&v_date, f);
+            to_return = to_return && f.check_date(&v_date);
         } else {
             return false;
         }
@@ -176,71 +169,152 @@ fn match_to_dates(vul_date: Option<NaiveDate>, date_filters: &Vec<String>) -> bo
     to_return
 }
 
-fn compare_date(date: &NaiveDate, filter_date: &str) -> bool {
+pub trait DateComparator {
+    fn check_date(&self, date: &NaiveDate) -> bool;
+}
+
+struct LessThanDate {
+    anchor_date: NaiveDate,
+}
+
+impl DateComparator for LessThanDate {
+    fn check_date(&self, date: &NaiveDate) -> bool {
+        (*date - self.anchor_date).num_days() < 0
+    }
+}
+
+struct GreaterThanDate {
+    anchor_date: NaiveDate,
+}
+
+impl DateComparator for GreaterThanDate {
+    fn check_date(&self, date: &NaiveDate) -> bool {
+        (*date - self.anchor_date).num_days() > 0
+    }
+}
+
+struct EqualToDate {
+    anchor_date: NaiveDate,
+}
+
+impl DateComparator for EqualToDate {
+    fn check_date(&self, date: &NaiveDate) -> bool {
+        (*date - self.anchor_date).num_days() == 0
+    }
+}
+
+struct AlwaysTrue {}
+
+impl DateComparator for AlwaysTrue {
+    fn check_date(&self, _date: &NaiveDate) -> bool {
+        true
+    }
+}
+
+pub fn filter_creator(filter_date: &str) -> Result<Box<dyn DateComparator>> {
     if filter_date.is_empty() {
-        return false;
+        return Err(CdxVexError::InvalidDateFilter(filter_date.to_string()));
     }
     let trimmed = filter_date.trim();
     if trimmed.len() != 11 {
         // check that the date is appropriate num of chars
         if trimmed.is_empty() {
-            return true;
+            return Ok(Box::new(AlwaysTrue {}));
         }
-        return false;
+        return Err(CdxVexError::InvalidDateFilter(filter_date.to_string()));
     }
     let (comparator, date_str) = trimmed.split_at(1);
     if let Ok(date_naive) = date_str.parse::<NaiveDate>() {
         match comparator {
-            "<" => (*date - date_naive).num_days() < 0,
-            ">" => (*date - date_naive).num_days() > 0,
-            "=" => *date == date_naive,
-            _ => false,
-        }
-    } else {
-        false
+            "<" => {
+                return Ok(Box::new(LessThanDate {
+                    anchor_date: date_naive,
+                }));
+            }
+            ">" => {
+                return Ok(Box::new(GreaterThanDate {
+                    anchor_date: date_naive,
+                }));
+            }
+            "=" => {
+                return Ok(Box::new(EqualToDate {
+                    anchor_date: date_naive,
+                }));
+            }
+            _ => return Err(CdxVexError::InvalidDateFilter(filter_date.to_string())),
+        };
     }
+    return Err(CdxVexError::InvalidDateFilter(filter_date.to_string()));
 }
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
-    use chrono::NaiveDate;
+    use chrono::{Days, NaiveDate};
 
     #[test]
-    fn match_last_updated_matches_expected_comparisons() {
-        let last_updated = NaiveDate::from_ymd_opt(2024, 1, 10).unwrap();
-
-        assert!(compare_date(&last_updated, "=2024-01-10"));
-        assert!(compare_date(&last_updated, "<2024-01-20 "));
-        assert!(compare_date(&last_updated, ">2024-01-01"));
+    fn match_less_than() {
+        let ex_date = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
+        let ex_date_m1 = ex_date - Days::new(1);
+        let ex_date_p1 = ex_date + Days::new(1);
+        let ex_date_eq = ex_date;
+        let ltd = LessThanDate {
+            anchor_date: ex_date,
+        };
+        assert!(ltd.check_date(&ex_date_m1));
+        assert!(!ltd.check_date(&ex_date_p1));
+        assert!(!ltd.check_date(&ex_date_eq));
     }
 
     #[test]
-    fn match_last_updated_rejects_non_matching_and_invalid_filters() {
-        let last_updated = NaiveDate::from_ymd_opt(2024, 1, 10).unwrap();
-
-        assert!(!compare_date(&last_updated, "<2024-01-01"));
-        assert!(!compare_date(&last_updated, ">2024-01-20 "));
-        assert!(!compare_date(&last_updated, "=bad-date"));
-        assert!(!compare_date(&last_updated, ""));
+    fn match_greater_than() {
+        let ex_date = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
+        let ex_date_m1 = ex_date - Days::new(1);
+        let ex_date_p1 = ex_date + Days::new(1);
+        let ex_date_eq = ex_date;
+        let gtd = GreaterThanDate {
+            anchor_date: ex_date,
+        };
+        assert!(!gtd.check_date(&ex_date_m1));
+        assert!(gtd.check_date(&ex_date_p1));
+        assert!(!gtd.check_date(&ex_date_eq));
     }
 
     #[test]
-    fn match_first_issued_matches_expected_comparisons() {
-        let first_issued = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
-
-        assert!(compare_date(&first_issued, "=2019-01-10"));
-        assert!(compare_date(&first_issued, "<2019-01-20 "));
-        assert!(compare_date(&first_issued, ">2019-01-01"));
+    fn match_equal_to() {
+        let ex_date = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
+        let ex_date_m1 = ex_date - Days::new(1);
+        let ex_date_p1 = ex_date + Days::new(1);
+        let ex_date_eq = ex_date;
+        let etd = EqualToDate {
+            anchor_date: ex_date,
+        };
+        assert!(!etd.check_date(&ex_date_m1));
+        assert!(!etd.check_date(&ex_date_p1));
+        assert!(etd.check_date(&ex_date_eq));
     }
 
     #[test]
-    fn match_first_issued_rejects_non_matching_and_invalid_filters() {
-        let first_issued = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
+    fn match_test_filter_creator() {
+        let ex_date = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
+        let ex_date_m1 = ex_date - Days::new(1);
+        let ex_date_p1 = ex_date + Days::new(1);
+        let ex_date_eq = ex_date;
+        let ltd = filter_creator("<2019-01-10").unwrap();
+        let gtd = filter_creator(">2019-01-10").unwrap();
+        let etd = filter_creator("=2019-01-10").unwrap();
 
-        assert!(!compare_date(&first_issued, "<20-01-01"));
-        assert!(!compare_date(&first_issued, ">2019-01-20 "));
-        assert!(!compare_date(&first_issued, "=bad-date"));
-        assert!(!compare_date(&first_issued, ""));
+        assert!(ltd.check_date(&ex_date_m1));
+        assert!(!ltd.check_date(&ex_date_p1));
+        assert!(!ltd.check_date(&ex_date_eq));
+
+        assert!(!gtd.check_date(&ex_date_m1));
+        assert!(gtd.check_date(&ex_date_p1));
+        assert!(!gtd.check_date(&ex_date_eq));
+
+        assert!(!etd.check_date(&ex_date_m1));
+        assert!(!etd.check_date(&ex_date_p1));
+        assert!(etd.check_date(&ex_date_eq));
     }
 }

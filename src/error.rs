@@ -1,5 +1,4 @@
 use chrono::ParseError;
-use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -20,5 +19,5 @@ pub enum CdxVexError {
     ParseError(#[from] ParseError),
 
     #[error("Filter format must be of format \"cYYYY-MM-DD\" where c is =, <, or >: {0}")]
-    InvalidLastUpdatedFilter(String),
+    InvalidDateFilter(String),
 }

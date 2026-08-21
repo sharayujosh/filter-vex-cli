@@ -8,7 +8,7 @@
     )
 )]
 
-use filter_vex_cli::{CdxVex, CdxVexFilter};
+use filter_vex_cli::{CdxVex, CdxVexFilter, filter_creator};
 
 // struct ExactTextFilter {
 //     pattern: String,
@@ -70,12 +70,16 @@ fn main() -> Result<()> {
     let mut filter: CdxVexFilter = CdxVexFilter::new().into_diagnostic()?;
     if let Some(date_filter) = args.last_updated_filter {
         for f in date_filter {
-            filter.last_updated.push(f);
+            filter
+                .last_updated
+                .push(filter_creator(&f.as_str()).into_diagnostic()?);
         }
     }
     if let Some(date_filter) = args.first_issued_filter {
         for f in date_filter {
-            filter.first_issued.push(f);
+            filter
+                .first_issued
+                .push(filter_creator(&f.as_str()).into_diagnostic()?);
         }
     }
     obj.apply_filter(&filter).into_diagnostic()?;
