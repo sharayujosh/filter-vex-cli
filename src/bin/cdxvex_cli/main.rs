@@ -56,6 +56,18 @@ struct Args {
     // date filter
     #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
     first_issued_filter: Option<Vec<String>>,
+
+    // date filter
+    #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
+    published_filter: Option<Vec<String>>,
+
+    // date filter
+    #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
+    updated_filter: Option<Vec<String>>,
+
+    // date filter
+    #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
+    created_filter: Option<Vec<String>>,
 }
 
 fn main() -> Result<()> {
@@ -79,6 +91,27 @@ fn main() -> Result<()> {
         for f in date_filter {
             filter
                 .first_issued
+                .push(filter_creator(&f.as_str()).into_diagnostic()?);
+        }
+    }
+    if let Some(date_filter) = args.published_filter {
+        for f in date_filter {
+            filter
+                .published
+                .push(filter_creator(&f.as_str()).into_diagnostic()?);
+        }
+    }
+    if let Some(date_filter) = args.updated_filter {
+        for f in date_filter {
+            filter
+                .updated
+                .push(filter_creator(&f.as_str()).into_diagnostic()?);
+        }
+    }
+    if let Some(date_filter) = args.created_filter {
+        for f in date_filter {
+            filter
+                .created
                 .push(filter_creator(&f.as_str()).into_diagnostic()?);
         }
     }

@@ -33,14 +33,14 @@
         "detail": "Extensive input validation is performed on the endpoint that would otherwise have been vulnerable. This provides a mitigating control against this attack. Customers are encouraged to upgrade to the latest version of the Acme App which bundles a newer version of log4j.",
         "firstIssued": "2021-12-11T19:00:00Z",
         "justification": "protected_by_mitigating_control",
-        "lastUpdated": "2022-01-07T19:00:00Z",
+        "lastUpdated": "2024-01-07T19:00:00Z",
         "response": [
           "will_not_fix",
           "update"
         ],
         "state": "not_affected"
       },
-      "id": "CVE-2021-44228",
+      "id": "CVE-2020-44228",
       "ratings": [
         {
           "method": "CVSSv31",

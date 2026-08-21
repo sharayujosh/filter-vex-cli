@@ -42,6 +42,9 @@
           "vector": "(SL:0/M:0/O:0/S:0/ED:0/EE:0/A:0/ID:3/LC:9/LI:9/LAV:1/LAC:1/FD:0/RD:0/NC:0/PV:0)"
         }
       ],
+      "created": "2020-12-03T00:00:00.000Z",
+      "published": "2020-12-03T00:00:00.000Z",
+      "updated": "2021-10-26T00:00:00.000Z",
       "analysis": {
         "state": "not_affected",
         "justification": "protected_by_mitigating_control",

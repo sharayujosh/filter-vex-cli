@@ -93,6 +93,9 @@ impl CdxVex {
 struct CdxVulnerability {
     last_updated: Option<NaiveDate>,
     first_issued: Option<NaiveDate>,
+    published: Option<NaiveDate>,
+    updated: Option<NaiveDate>,
+    created: Option<NaiveDate>,
 }
 
 impl CdxVulnerability {
@@ -120,9 +123,46 @@ impl CdxVulnerability {
             )?);
         }
 
+        // add published/updated? https://cyclonedx.org/docs/1.7/json/
+        let mut published: Option<NaiveDate> = None;
+        if let Some(a) = var.get("published")
+            && let Some(x) = a.as_str()
+        {
+            // println!("\n\n LU IS: {:?}", x);
+            published = Some(NaiveDate::parse_from_str(
+                x.trim_end_matches('Z'),
+                "%Y-%m-%dT%H:%M:%S%.3f",
+            )?);
+        }
+
+        let mut updated: Option<NaiveDate> = None;
+        if let Some(a) = var.get("updated")
+            && let Some(x) = a.as_str()
+        {
+            // println!("\n\n LU IS: {:?}", x);
+            updated = Some(NaiveDate::parse_from_str(
+                x.trim_end_matches('Z'),
+                "%Y-%m-%dT%H:%M:%S%.3f",
+            )?);
+        }
+
+        let mut created: Option<NaiveDate> = None;
+        if let Some(a) = var.get("created")
+            && let Some(x) = a.as_str()
+        {
+            // println!("\n\n LU IS: {:?}", x);
+            created = Some(NaiveDate::parse_from_str(
+                x.trim_end_matches('Z'),
+                "%Y-%m-%dT%H:%M:%S%.3f",
+            )?);
+        }
+
         Ok(Self {
             last_updated,
             first_issued,
+            published,
+            updated,
+            created,
         })
     }
 
@@ -133,12 +173,18 @@ impl CdxVulnerability {
     fn match_filter(&self, filter: &CdxVexFilter) -> bool {
         match_to_dates(self.last_updated, &filter.last_updated)
             && match_to_dates(self.first_issued, &filter.first_issued)
+            && match_to_dates(self.published, &filter.published)
+            && match_to_dates(self.updated, &filter.updated)
+            && match_to_dates(self.created, &filter.created)
     }
 }
 
 pub struct CdxVexFilter {
     pub last_updated: Vec<Box<dyn DateComparator>>,
     pub first_issued: Vec<Box<dyn DateComparator>>,
+    pub published: Vec<Box<dyn DateComparator>>,
+    pub updated: Vec<Box<dyn DateComparator>>,
+    pub created: Vec<Box<dyn DateComparator>>,
 }
 
 impl CdxVexFilter {
@@ -146,6 +192,9 @@ impl CdxVexFilter {
         Ok(Self {
             last_updated: Vec::new(),
             first_issued: Vec::new(),
+            published: Vec::new(),
+            updated: Vec::new(),
+            created: Vec::new(),
         })
     }
 }
