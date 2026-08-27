@@ -9,6 +9,8 @@
 )]
 
 use chrono::{NaiveDate, Utc};
+use dateparser;
+use serde::Deserialize;
 use serde_json::Value;
 use std::fs;
 use std::io::Write;
@@ -39,34 +41,6 @@ impl CdxVex {
         Ok(())
     }
 
-    pub fn print_last_updateds(&mut self) -> Result<()> {
-        let mut to_delete: Vec<usize> = Vec::new();
-        let days = 1000;
-        if let Some(vul) = self
-            .0
-            .get_mut("vulnerabilities")
-            .and_then(|v| v.as_array_mut())
-        {
-            for (id, i) in vul.iter().enumerate() {
-                let vv = CdxVulnerability::new(i)?;
-                if let Some(n) = vv.get_last_updated() {
-                    let today = Utc::now().date_naive();
-
-                    if (today - n).num_days() > days {
-                        to_delete.push(id);
-                        println!("{:?}", to_delete);
-                    }
-                }
-            }
-
-            for i in to_delete.iter().rev() {
-                vul.remove(*i);
-            }
-            println!("{:?}", vul);
-        }
-        Ok(())
-    }
-
     pub fn apply_filter(&mut self, filter: &CdxVexFilter) -> Result<()> {
         let mut to_delete: Vec<usize> = Vec::new();
         if let Some(vul) = self
@@ -75,7 +49,7 @@ impl CdxVex {
             .and_then(|v| v.as_array_mut())
         {
             for (id, i) in vul.iter().enumerate() {
-                let vv = CdxVulnerability::new(i)?;
+                let vv: CdxVulnerability = serde_json::from_value(i.clone())?;
                 if !vv.match_filter(filter) {
                     to_delete.push(id);
                 }
@@ -89,96 +63,34 @@ impl CdxVex {
         Ok(())
     }
 }
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct CdxAnalysis {
+    // state: Option<String>,
+    first_issued: Option<String>,
+    last_updated: Option<String>,
+}
 
+#[derive(Deserialize, Debug)]
 struct CdxVulnerability {
-    last_updated: Option<NaiveDate>,
-    first_issued: Option<NaiveDate>,
-    published: Option<NaiveDate>,
-    updated: Option<NaiveDate>,
-    created: Option<NaiveDate>,
+    analysis: Option<CdxAnalysis>,
+    published: Option<String>,
+    updated: Option<String>,
+    created: Option<String>,
 }
 
 impl CdxVulnerability {
-    fn new(var: &serde_json::Value) -> Result<Self> {
-        let mut last_updated: Option<NaiveDate> = None;
-        if let Some(a) = var.get("analysis")
-            && let Some(u) = a.get("lastUpdated")
-            && let Some(x) = u.as_str()
-        {
-            // println!("\n\n LU IS: {:?}", x);
-            last_updated = Some(NaiveDate::parse_from_str(
-                x.trim_end_matches('Z'),
-                "%Y-%m-%dT%H:%M:%S",
-            )?);
-        }
-        let mut first_issued: Option<NaiveDate> = None;
-        if let Some(a) = var.get("analysis")
-            && let Some(u) = a.get("firstIssued")
-            && let Some(x) = u.as_str()
-        {
-            // println!("\n\n LU IS: {:?}", x);
-            first_issued = Some(NaiveDate::parse_from_str(
-                x.trim_end_matches('Z'),
-                "%Y-%m-%dT%H:%M:%S",
-            )?);
-        }
-
-        // add published/updated? https://cyclonedx.org/docs/1.7/json/
-        let mut published: Option<NaiveDate> = None;
-        if let Some(a) = var.get("published")
-            && let Some(x) = a.as_str()
-        {
-            // println!("\n\n LU IS: {:?}", x);
-            published = Some(NaiveDate::parse_from_str(
-                x.trim_end_matches('Z'),
-                "%Y-%m-%dT%H:%M:%S%.3f",
-            )?);
-        }
-
-        let mut updated: Option<NaiveDate> = None;
-        if let Some(a) = var.get("updated")
-            && let Some(x) = a.as_str()
-        {
-            // println!("\n\n LU IS: {:?}", x);
-            updated = Some(NaiveDate::parse_from_str(
-                x.trim_end_matches('Z'),
-                "%Y-%m-%dT%H:%M:%S%.3f",
-            )?);
-        }
-
-        let mut created: Option<NaiveDate> = None;
-        if let Some(a) = var.get("created")
-            && let Some(x) = a.as_str()
-        {
-            // println!("\n\n LU IS: {:?}", x);
-            created = Some(NaiveDate::parse_from_str(
-                x.trim_end_matches('Z'),
-                "%Y-%m-%dT%H:%M:%S%.3f",
-            )?);
-        }
-
-        Ok(Self {
-            last_updated,
-            first_issued,
-            published,
-            updated,
-            created,
-        })
-    }
-
-    fn get_last_updated(&self) -> Option<NaiveDate> {
-        self.last_updated
-    }
-
     fn match_filter(&self, filter: &CdxVexFilter) -> bool {
-        match_to_dates(self.last_updated, &filter.last_updated)
-            && match_to_dates(self.first_issued, &filter.first_issued)
-            && match_to_dates(self.published, &filter.published)
-            && match_to_dates(self.updated, &filter.updated)
-            && match_to_dates(self.created, &filter.created)
+        let mut rc = true;
+        if let Some(a) = &self.analysis {
+            rc = match_to_dates(a.last_updated.clone(), &filter.last_updated)
+                && match_to_dates(a.first_issued.clone(), &filter.first_issued)
+        }
+        rc && match_to_dates(self.published.clone(), &filter.published)
+            && match_to_dates(self.updated.clone(), &filter.updated)
+            && match_to_dates(self.created.clone(), &filter.created)
     }
 }
-
 pub struct CdxVexFilter {
     pub last_updated: Vec<Box<dyn DateComparator>>,
     pub first_issued: Vec<Box<dyn DateComparator>>,
@@ -199,13 +111,13 @@ impl CdxVexFilter {
     }
 }
 
-fn match_to_dates(
-    vul_date: Option<NaiveDate>,
-    date_filters: &Vec<Box<dyn DateComparator>>,
-) -> bool {
+fn match_to_dates(vul_date: Option<String>, date_filters: &Vec<Box<dyn DateComparator>>) -> bool {
     let mut to_return = true;
     let v_date = match vul_date {
-        Some(v) => v,
+        Some(v) => match dateparser::parse(&v) {
+            Ok(d) => d.date_naive(),
+            _ => return true,
+        },
         None => return true,
     };
     for f in date_filters {
