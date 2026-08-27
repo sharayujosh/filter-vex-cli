@@ -167,6 +167,22 @@ impl DateComparator for AlwaysTrue {
     }
 }
 
+/// Creates a date filter based on the provided string.
+/// The format of string is as follows:
+/// - "<YYYY-MM-DD" for dates less than the specified date
+/// - ">YYYY-MM-DD" for dates greater than the specified date
+/// - "=YYYY-MM-DD" for dates equal to the specified date
+/// - "" (empty string) for an always true filter
+///
+/// Example usage:
+/// ```rust
+/// use chrono::NaiveDate;
+/// use filter_vex_cli::filter_creator;
+///
+/// let filter = filter_creator("<2023-01-01").unwrap();
+/// assert!(filter.check_date(&NaiveDate::from_ymd_opt(2022, 12, 31).unwrap()));
+/// assert!(!filter.check_date(&NaiveDate::from_ymd_opt(2023, 01, 01).unwrap()));
+/// ```
 pub fn filter_creator(filter_date: &str) -> Result<Box<dyn DateComparator>> {
     if filter_date.is_empty() {
         return Err(CdxVexError::InvalidDateFilter(filter_date.to_string()));
