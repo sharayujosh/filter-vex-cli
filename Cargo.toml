@@ -21,6 +21,8 @@ path = "src/bin/cdxvex_cli/main.rs"
 chrono = "0.4.44"
 serde_json = "1.0.150"
 thiserror = "2.0.20"
+serde = {version = "1.0.229", features = ["derive"]}
+dateparser = "0.3.1"
 
 # CLI specific dependencies
 clap = { version = "4", features = ["derive"], optional = true}
