@@ -71,14 +71,10 @@ struct Args {
 }
 
 fn main() -> Result<()> {
-    // let tf = ExactTextFilter::new("foo");
-    // println!("{}", tf.equals("bar"));
-
     let args = Args::parse();
 
     let mut obj: CdxVex = CdxVex::from_json_file(&args.input_file).into_diagnostic()?;
 
-    //obj.print_last_updateds()?;
     let mut filter: CdxVexFilter = CdxVexFilter::new().into_diagnostic()?;
     if let Some(date_filter) = args.last_updated_filter {
         for f in date_filter {
@@ -119,5 +115,4 @@ fn main() -> Result<()> {
     obj.write_json_file(&args.output_file).into_diagnostic()?;
 
     Ok(())
-    //let sample_data = serde_json::from_str(&(fs::read_to_string("sample_vex.json")?))?;
 }

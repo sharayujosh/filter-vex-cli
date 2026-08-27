@@ -8,7 +8,7 @@
     )
 )]
 
-use chrono::{NaiveDate, Utc};
+use chrono::NaiveDate;
 use dateparser;
 use serde::Deserialize;
 use serde_json::Value;
@@ -32,10 +32,6 @@ impl CdxVex {
 
     pub fn write_json_file(&self, file_path: &str) -> Result<()> {
         let to_write = serde_json::to_string_pretty(&self.0)?;
-        // let mut file = OpenOptions::new()
-        // .create(true) // Create the file if it doesn't exist.
-        // .append(true) // Seek to end before every write.
-        // .open(file_path)?;
         let mut output_file = fs::File::create(file_path)?;
         output_file.write_all(to_write.as_bytes())?;
         Ok(())
@@ -66,7 +62,6 @@ impl CdxVex {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct CdxAnalysis {
-    // state: Option<String>,
     first_issued: Option<String>,
     last_updated: Option<String>,
 }

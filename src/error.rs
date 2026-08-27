@@ -6,12 +6,7 @@ use thiserror::Error;
 pub enum CdxVexError {
     #[error("Fail to read file")]
     IoError(#[from] std::io::Error),
-    // #[error("failed to read {path}")]
-    // ReadFile {
-    //     path: PathBuf,
-    //     #[source]
-    //     source: std::io::Error,
-    // },
+
     #[error("json error: {0}")]
     JsonError(#[from] serde_json::Error),
 
