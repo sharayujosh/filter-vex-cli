@@ -177,13 +177,13 @@ impl DateComparator for AlwaysTrue {
 /// Example usage:
 /// ```rust
 /// use chrono::NaiveDate;
-/// use filter_vex_cli::filter_creator;
+/// use filter_vex_cli::create_filter;
 ///
-/// let filter = filter_creator("<2023-01-01").unwrap();
+/// let filter = create_filter("<2023-01-01").unwrap();
 /// assert!(filter.check_date(&NaiveDate::from_ymd_opt(2022, 12, 31).unwrap()));
 /// assert!(!filter.check_date(&NaiveDate::from_ymd_opt(2023, 01, 01).unwrap()));
 /// ```
-pub fn filter_creator(filter_date: &str) -> Result<Box<dyn DateComparator>> {
+pub fn create_filter(filter_date: &str) -> Result<Box<dyn DateComparator>> {
     if filter_date.is_empty() {
         return Err(CdxVexError::InvalidDateFilter(filter_date.to_string()));
     }
@@ -268,14 +268,14 @@ mod tests {
     }
 
     #[test]
-    fn match_test_filter_creator() {
+    fn match_test_create_filter() {
         let ex_date = NaiveDate::from_ymd_opt(2019, 1, 10).unwrap();
         let ex_date_m1 = ex_date - Days::new(1);
         let ex_date_p1 = ex_date + Days::new(1);
         let ex_date_eq = ex_date;
-        let ltd = filter_creator("<2019-01-10").unwrap();
-        let gtd = filter_creator(">2019-01-10").unwrap();
-        let etd = filter_creator("=2019-01-10").unwrap();
+        let ltd = create_filter("<2019-01-10").unwrap();
+        let gtd = create_filter(">2019-01-10").unwrap();
+        let etd = create_filter("=2019-01-10").unwrap();
 
         assert!(ltd.check_date(&ex_date_m1));
         assert!(!ltd.check_date(&ex_date_p1));
@@ -288,5 +288,150 @@ mod tests {
         assert!(!etd.check_date(&ex_date_m1));
         assert!(!etd.check_date(&ex_date_p1));
         assert!(etd.check_date(&ex_date_eq));
+    }
+
+    #[test]
+    fn test_vul_filter_pass() {
+        let vul = CdxVulnerability {
+            analysis: {
+                Some(CdxAnalysis {
+                    first_issued: Some("2019-01-10T00:00:00".to_string()),
+                    last_updated: Some("2020-12-13T00:00:00".to_string()),
+                })
+            },
+            published: Some("2020-12-03T00:00:00.000Z".to_string()),
+            created: Some("2019-03-03T00:00:00.000Z".to_string()),
+            updated: Some("2020-12-13T00:00:00.000Z".to_string()),
+        };
+        let ltd = create_filter("<2021-01-10").unwrap();
+        let gtd = create_filter(">2018-01-10").unwrap();
+        let etd = create_filter("=2020-12-03").unwrap();
+        let mut filter = CdxVexFilter::new().unwrap();
+        filter.published.push(ltd);
+        assert!(vul.match_filter(&filter));
+        filter.published.push(gtd);
+        assert!(vul.match_filter(&filter));
+        filter.published.push(etd);
+        assert!(vul.match_filter(&filter));
+        let ltd = create_filter("<2021-01-10").unwrap();
+        let gtd = create_filter(">2018-01-10").unwrap();
+        let etd = create_filter("=2019-03-03").unwrap();
+        filter.created.push(ltd);
+        assert!(vul.match_filter(&filter));
+        filter.created.push(gtd);
+        assert!(vul.match_filter(&filter));
+        filter.created.push(etd);
+        assert!(vul.match_filter(&filter));
+        let ltd = create_filter("<2021-01-10").unwrap();
+        let gtd = create_filter(">2018-01-10").unwrap();
+        let etd = create_filter("=2020-12-13").unwrap();
+        filter.updated.push(ltd);
+        assert!(vul.match_filter(&filter));
+        filter.updated.push(gtd);
+        assert!(vul.match_filter(&filter));
+        filter.updated.push(etd);
+        assert!(vul.match_filter(&filter));
+        let ltd = create_filter("<2021-01-10").unwrap();
+        let gtd = create_filter(">2018-01-10").unwrap();
+        let etd = create_filter("=2020-12-13").unwrap();
+        filter.last_updated.push(ltd);
+        assert!(vul.match_filter(&filter));
+        filter.last_updated.push(gtd);
+        assert!(vul.match_filter(&filter));
+        filter.last_updated.push(etd);
+        assert!(vul.match_filter(&filter));
+        let ltd = create_filter("<2021-01-10").unwrap();
+        let gtd = create_filter(">2018-01-10").unwrap();
+        let etd = create_filter("=2020-12-13").unwrap();
+        filter.first_issued.push(ltd);
+        assert!(vul.match_filter(&filter));
+        filter.first_issued.push(gtd);
+        assert!(vul.match_filter(&filter));
+        filter.first_issued.push(etd);
+        assert!(vul.match_filter(&filter));
+
+        let vul = CdxVulnerability {
+            analysis: None,
+            published: None,
+            created: None,
+            updated: None,
+        };
+
+        assert!(vul.match_filter(&filter));
+    }
+
+    #[test]
+    fn test_vul_filter_fails() {
+        let vul = CdxVulnerability {
+            analysis: {
+                Some(CdxAnalysis {
+                    first_issued: Some("2019-01-10T00:00:00".to_string()),
+                    last_updated: Some("2020-12-13T00:00:00".to_string()),
+                })
+            },
+            published: Some("2020-12-03T00:00:00.000Z".to_string()),
+            created: Some("2019-03-03T00:00:00.000Z".to_string()),
+            updated: Some("2020-12-13T00:00:00.000Z".to_string()),
+        };
+        let ltd = create_filter("<2018-01-10").unwrap();
+        let gtd = create_filter(">2022-01-10").unwrap();
+        let etd = create_filter("=2010-12-03").unwrap();
+        let mut filter = CdxVexFilter::new().unwrap();
+        filter.published.push(ltd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.published.push(gtd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.published.push(etd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        let ltd = create_filter("<2018-01-10").unwrap();
+        let gtd = create_filter(">2022-01-10").unwrap();
+        let etd = create_filter("=2011-03-03").unwrap();
+        filter.created.push(ltd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.created.push(gtd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.created.push(etd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        let ltd = create_filter("<2018-01-10").unwrap();
+        let gtd = create_filter(">2022-01-10").unwrap();
+        let etd = create_filter("=2021-12-13").unwrap();
+        filter.updated.push(ltd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.updated.push(gtd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.updated.push(etd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        let ltd = create_filter("<2018-01-10").unwrap();
+        let gtd = create_filter(">2022-01-10").unwrap();
+        let etd = create_filter("=2023-12-13").unwrap();
+        filter.last_updated.push(ltd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.last_updated.push(gtd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.last_updated.push(etd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        let ltd = create_filter("<2018-01-10").unwrap();
+        let gtd = create_filter(">2022-01-10").unwrap();
+        let etd = create_filter("=2019-12-13").unwrap();
+        filter.first_issued.push(ltd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.first_issued.push(gtd);
+        assert!(!vul.match_filter(&filter));
+        filter.published.pop();
+        filter.first_issued.push(etd);
+        assert!(!vul.match_filter(&filter));
     }
 }
