@@ -61,75 +61,39 @@ fn main() -> Result<()> {
                 for f in date_filter {
                     filter
                         .last_updated
-                        .push(create_filter(&f.as_str()).into_diagnostic()?);
+                        .push(create_filter(f.as_str()).into_diagnostic()?);
                 }
             }
             if let Some(date_filter) = first_issued_filter {
                 for f in date_filter {
                     filter
                         .first_issued
-                        .push(create_filter(&f.as_str()).into_diagnostic()?);
+                        .push(create_filter(f.as_str()).into_diagnostic()?);
                 }
             }
             if let Some(date_filter) = published_filter {
                 for f in date_filter {
                     filter
                         .published
-                        .push(create_filter(&f.as_str()).into_diagnostic()?);
+                        .push(create_filter(f.as_str()).into_diagnostic()?);
                 }
             }
             if let Some(date_filter) = updated_filter {
                 for f in date_filter {
                     filter
                         .updated
-                        .push(create_filter(&f.as_str()).into_diagnostic()?);
+                        .push(create_filter(f.as_str()).into_diagnostic()?);
                 }
             }
             if let Some(date_filter) = created_filter {
                 for f in date_filter {
                     filter
                         .created
-                        .push(create_filter(&f.as_str()).into_diagnostic()?);
+                        .push(create_filter(f.as_str()).into_diagnostic()?);
                 }
             }
         }
     }
-
-    // if let Some(date_filter) = args.last_updated_filter {
-    //     for f in date_filter {
-    //         filter
-    //             .last_updated
-    //             .push(create_filter(&f.as_str()).into_diagnostic()?);
-    //     }
-    // }
-    // if let Some(date_filter) = args.first_issued_filter {
-    //     for f in date_filter {
-    //         filter
-    //             .first_issued
-    //             .push(create_filter(&f.as_str()).into_diagnostic()?);
-    //     }
-    // }
-    // if let Some(date_filter) = args.published_filter {
-    //     for f in date_filter {
-    //         filter
-    //             .published
-    //             .push(create_filter(&f.as_str()).into_diagnostic()?);
-    //     }
-    // }
-    // if let Some(date_filter) = args.updated_filter {
-    //     for f in date_filter {
-    //         filter
-    //             .updated
-    //             .push(create_filter(&f.as_str()).into_diagnostic()?);
-    //     }
-    // }
-    // if let Some(date_filter) = args.created_filter {
-    //     for f in date_filter {
-    //         filter
-    //             .created
-    //             .push(create_filter(&f.as_str()).into_diagnostic()?);
-    //     }
-    // }
     obj.apply_filter(&filter).into_diagnostic()?;
     obj.write_json_file(&args.output_file).into_diagnostic()?;
 
