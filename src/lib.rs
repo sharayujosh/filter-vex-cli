@@ -9,7 +9,6 @@
 )]
 
 use chrono::NaiveDate;
-use dateparser;
 use serde::Deserialize;
 use serde_json::Value;
 use std::fs;
@@ -216,7 +215,7 @@ pub fn create_filter(filter_date: &str) -> Result<Box<dyn DateComparator>> {
             _ => return Err(CdxVexError::InvalidDateFilter(filter_date.to_string())),
         };
     }
-    return Err(CdxVexError::InvalidDateFilter(filter_date.to_string()));
+    Err(CdxVexError::InvalidDateFilter(filter_date.to_string()))
 }
 
 #[cfg(test)]
